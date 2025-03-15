@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
+
 #define S_ALLOC malloc
 #define S_REALLOC realloc
 #define S_FREE free
@@ -28,12 +29,14 @@ typedef struct StringBuilder {
 
 // effectively strlen; assume '\0'
 uint32_t CharLen(char *c);
+char CharLower(char c);
+char CharUpper(char c);
 
-void StringNewLen_(String *s, char *c, uint32_t len);
-String StringNewLen(char *c, uint32_t len);
+/*void StringNewLen_(String *s, char *c, uint32_t len);*/
+/*String StringNewLen(char *c, uint32_t len);*/
 
-void StringNew_(String *s, char *c);
-String StringNew(char *c);
+/*void StringNew_(String *s, char *c);*/
+/*String StringNew(char *c);*/
 
 /*static void StringBuilderAdjust(StringBuilder *sb, uint32_t len);*/
 void StringBuilderAdd(StringBuilder *sb, char c);
@@ -46,7 +49,6 @@ void StringBuilderFree(StringBuilder *sb);
     StringBuilderAppendArray((sb), sep, ((char*[]){__VA_ARGS__}), \
                              (uint32_t)(sizeof((char*[]){__VA_ARGS__})/sizeof(char*)))
 
-
 #endif // STRING_H
 
 #define STRING_IMPLEMENTATION // DEBUG
@@ -54,11 +56,11 @@ void StringBuilderFree(StringBuilder *sb);
 
 void MemoryCopy(void *dst, void *src, uint32_t size)
 {
-    char *cdst = dst;
-    char *csrc = src;
+    char *cdst = (char *)dst;
+    char *csrc = (char *)src;
     while (size--)
     {
-        *(cdst--) = *(csrc--);
+        *(cdst++) = *(csrc++);
     }
 }
 
@@ -74,34 +76,46 @@ uint32_t CharLen(char *c)
     return size;
 }
 
-void StringNewLen_(String *s, char *c, uint32_t len)
+char CharLower(char c)
 {
-    s->c = (c) ? (c) : (char *)"\0";
-    s->length = len;
+    if ('A' <= c && c <= 'Z') { c = c - ('A' - 'a'); }
+    return c;
 }
 
-String StringNewLen(char *c, uint32_t len)
+char CharUpper(char c)
 {
-    String result = {0};
-
-    StringNewLen_(&result, c, len);
-
-    return result;
+    if ('a' <= c && c <= 'z') { c = c - ('a' - 'A'); }
+    return c;
 }
 
-void StringNew_(String *s, char *c)
-{
-    StringNewLen_(s, c, CharLen(c));
-}
-
-String StringNew(char *c)
-{
-    String result = {0};
-
-    StringNewLen_(&result, c, CharLen(c));
-
-    return result;
-}
+/*void StringNewLen_(String *s, char *c, uint32_t len)*/
+/*{*/
+/*    s->c = (c) ? (c) : (char *)"\0";*/
+/*    s->length = len;*/
+/*}*/
+/**/
+/*String StringNewLen(char *c, uint32_t len)*/
+/*{*/
+/*    String result = {0};*/
+/**/
+/*    StringNewLen_(&result, c, len);*/
+/**/
+/*    return result;*/
+/*}*/
+/**/
+/*void StringNew_(String *s, char *c)*/
+/*{*/
+/*    StringNewLen_(s, c, CharLen(c));*/
+/*}*/
+/**/
+/*String StringNew(char *c)*/
+/*{*/
+/*    String result = {0};*/
+/**/
+/*    StringNewLen_(&result, c, CharLen(c));*/
+/**/
+/*    return result;*/
+/*}*/
 
 static void StringBuilderAdjust(StringBuilder *sb, uint32_t len)
 {
@@ -148,6 +162,16 @@ void StringBuilderAppendArray(StringBuilder *sb, char *sep, char **s, uint32_t s
     }
 }
 
+void StringBuilderTruncate(StringBuilder *sb, uint32_t size)
+{
+    uint32_t actualSize = S_MAX(size, 0) + 1;
+    if (actualSize < sb->size)
+    {
+        sb->size = actualSize;
+        sb->s[sb->size] = '\0';
+    }
+}
+
 void StringBuilderDump(StringBuilder *sb, String *dst)
 {
     dst->length = sb->size;
@@ -160,6 +184,8 @@ void StringBuilderFree(StringBuilder *sb)
     {
         S_FREE(sb->s);
     }
+    sb->size = 0;
+    sb->capacity = 0;
 }
 
 #endif // STRING_IMPLEMENTATION
